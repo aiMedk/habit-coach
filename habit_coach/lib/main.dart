@@ -1,122 +1,65 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart' as rc;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:habit_coach/app.dart';
+import 'package:habit_coach/features/notifications/data/repositories/supabase_notification_repository.dart';
+import 'package:habit_coach/features/notifications/data/services/fcm_notification_service.dart';
+import 'package:habit_coach/firebase_options.dart';
 
-void main() {
-  runApp(const MyApp());
+/// T011 / T127: App entry point.
+///
+/// Initialisation order:
+///   1. Flutter binding
+///   2. Supabase (auth, realtime, edge functions)
+///   3. Firebase (FCM) + background message handler
+///   4. Isar — opened per-repository via lazy initialization in T034
+///
+/// Environment variables are read from the build environment (`--dart-define`).
+/// Never hard-code credentials here.
+
+/// Top-level background message handler (must be top-level, not a closure).
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Background messages are handled by the OS notification tray.
+  // No additional processing needed here.
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+  // Supabase initialisation.
+  // Values injected at build time via:
+  //   flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
+  await Supabase.initialize(
+    url: const String.fromEnvironment('SUPABASE_URL'),
+    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+  );
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  // Firebase initialisation (FCM push notifications).
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  // Register background message handler before the app starts.
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  // T137: RevenueCat SDK initialization.
+  // API keys injected at build time via --dart-define.
+  final rcApiKey =
+      const String.fromEnvironment('REVENUECAT_IOS_KEY').isNotEmpty
+          ? const String.fromEnvironment('REVENUECAT_IOS_KEY')
+          : const String.fromEnvironment('REVENUECAT_ANDROID_KEY');
+  if (rcApiKey.isNotEmpty) {
+    await rc.Purchases.configure(rc.PurchasesConfiguration(rcApiKey));
+    rc.Purchases.setLogLevel(rc.LogLevel.info);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
+  // T127: FCM service is initialised per-user after auth in HabitCoachApp.
+  // Expose it as a singleton so the router can access the initial message.
+  final fcmService = FCMNotificationService(SupabaseNotificationRepository());
+
+  runApp(
+    ProviderScope(overrides: [], child: HabitCoachApp(fcmService: fcmService)),
+  );
 }
