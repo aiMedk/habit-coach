@@ -4,15 +4,14 @@ import 'package:habit_coach/core/router/app_router.dart';
 import 'package:habit_coach/core/theme/app_theme.dart';
 import 'package:habit_coach/features/auth/presentation/providers/auth_providers.dart';
 import 'package:habit_coach/features/habits/presentation/providers/habit_providers.dart';
-// import 'package:habit_coach/features/notifications/data/services/fcm_notification_service.dart';
+import 'package:habit_coach/features/notifications/data/services/fcm_notification_service.dart';
 
 /// Root app widget. Consumes the GoRouter from Riverpod and applies
 /// the Material 3 theme. Riverpod's ProviderScope is set up in main.dart.
 class HabitCoachApp extends ConsumerStatefulWidget {
-  const HabitCoachApp({super.key, this.fcmService});
+  const HabitCoachApp({super.key, required this.fcmService});
 
-  // NOTE: FCMNotificationService is optional until Firebase is implemented
-  final dynamic fcmService;
+  final FCMNotificationService fcmService;
 
   @override
   ConsumerState<HabitCoachApp> createState() => _HabitCoachAppState();
@@ -30,8 +29,8 @@ class _HabitCoachAppState extends ConsumerState<HabitCoachApp> {
         if (user != null) {
           // T020: Initialise offline completion queue
           ref.read(offlineQueueProvider);
-          // T127: Initialise FCM (if available)
-          if (!_fcmInitialised && widget.fcmService != null) {
+          // T127: Initialise FCM
+          if (!_fcmInitialised) {
             _fcmInitialised = true;
             widget.fcmService.init(user.id);
           }

@@ -42,6 +42,14 @@ dependencies:
   # Backend and authentication
   supabase_flutter: ^2.9.0
   flutter_secure_storage: ^10.0.0
+  sign_in_with_apple: ^6.1.0
+
+  # Firebase (push notifications)
+  firebase_core: ^3.0.0
+  firebase_messaging: ^15.0.0
+
+  # Subscription / in-app purchases
+  purchases_flutter: ^8.0.0
 
   # Local-first database
   isar: ^3.1.0
@@ -69,8 +77,6 @@ dev_dependencies:
 
   # Testing
   mocktail: ^1.0.0
-  integration_test:
-    sdk: flutter
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

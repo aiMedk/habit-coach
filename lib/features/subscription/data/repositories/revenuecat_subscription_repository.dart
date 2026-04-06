@@ -51,8 +51,8 @@ class RevenueCatSubscriptionRepository implements SubscriptionRepository {
     final package = offerings.current?.availablePackages.firstOrNull;
     if (package == null) throw Exception('No packages available');
 
-    final result = await rc.Purchases.purchasePackage(package);
-    return _subscriptionFromCustomerInfo(result.customerInfo);
+    final customerInfo = await rc.Purchases.purchasePackage(package);
+    return _subscriptionFromCustomerInfo(customerInfo);
   }
 
   @override
