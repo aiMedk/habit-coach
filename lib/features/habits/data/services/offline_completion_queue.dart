@@ -31,6 +31,11 @@ final class OfflineCompletionQueue {
   StreamSubscription<bool>? _subscription;
   bool _draining = false;
 
+  // T021: Stream for sync failure notifications
+  final StreamController<bool> _syncFailureController =
+      StreamController<bool>.broadcast();
+  Stream<bool> get syncFailures => _syncFailureController.stream;
+
   /// Starts listening for connectivity changes and drains immediately if online.
   Future<void> start() async {
     _subscription = connectivity.onConnectivityChanged.listen((isOnline) {
@@ -43,10 +48,11 @@ final class OfflineCompletionQueue {
     }
   }
 
-  /// Cancels the connectivity listener.
+  /// Cancels the connectivity listener and closes the sync failure stream.
   void dispose() {
     _subscription?.cancel();
     _subscription = null;
+    _syncFailureController.close();
   }
 
   // ── Internal ────────────────────────────────────────────────────────────────
@@ -58,7 +64,8 @@ final class OfflineCompletionQueue {
       await _pushAndStamp();
       await _pullAndMerge();
     } catch (_) {
-      // Silently swallow: next connectivity event will retry.
+      // T021: Emit sync failure notification. Will retry on next connectivity event.
+      _syncFailureController.add(true);
     } finally {
       _draining = false;
     }

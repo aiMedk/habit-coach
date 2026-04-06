@@ -5,10 +5,16 @@ import 'package:habit_coach/core/router/app_router.dart';
 import 'package:habit_coach/features/habits/domain/entities/habit.dart';
 import 'package:habit_coach/features/onboarding/presentation/providers/onboarding_providers.dart';
 
-/// T047b: Habit creation screen — second onboarding step.
-/// Collects the name, optional description, and frequency of the first habit.
+/// T047b: Habit creation screen — second onboarding step and post-onboarding
+/// add-habit entry point.
+///
+/// [afterSaveRoute] controls where the app navigates after a habit is saved.
+/// Defaults to [AppRoutes.onboardingComplete] (onboarding flow).
+/// Pass [AppRoutes.dashboard] when opened from the dashboard FAB.
 class HabitCreationScreen extends ConsumerStatefulWidget {
-  const HabitCreationScreen({super.key});
+  const HabitCreationScreen({super.key, this.afterSaveRoute});
+
+  final String? afterSaveRoute;
 
   @override
   ConsumerState<HabitCreationScreen> createState() =>
@@ -165,7 +171,8 @@ class _HabitCreationScreenState extends ConsumerState<HabitCreationScreen> {
         frequencyDays: frequencyDays,
       );
 
-      if (mounted) context.pushReplacement(AppRoutes.onboardingComplete);
+      final dest = widget.afterSaveRoute ?? AppRoutes.onboardingComplete;
+      if (mounted) context.pushReplacement(dest);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {

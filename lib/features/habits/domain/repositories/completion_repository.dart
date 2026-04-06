@@ -31,6 +31,14 @@ abstract interface class CompletionRepository {
     int days = 30,
   });
 
+  /// Returns all non-undone completions for [userId] within the inclusive date
+  /// range [startDate]–[endDate] (YYYY-MM-DD strings).
+  Future<List<Completion>> getCompletionsForDateRange(
+    String userId,
+    String startDate,
+    String endDate,
+  );
+
   /// Returns all completions not yet synced to Supabase.
   Future<List<Completion>> getPendingSyncCompletions(String userId);
 }

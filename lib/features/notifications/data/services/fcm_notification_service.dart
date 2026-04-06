@@ -22,11 +22,15 @@ class FCMNotificationService {
   /// listeners. Call once after the user authenticates.
   Future<void> init(String userId) async {
     // Request permissions (iOS / macOS).
-    await FirebaseMessaging.instance.requestPermission(
+    final settings = await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
+
+    // If permission denied or not-determined (e.g. free dev account without
+    // Push Notifications entitlement), skip token registration silently.
+    if (settings.authorizationStatus == AuthorizationStatus.denied) return;
 
     // Show foreground notifications on iOS.
     await FirebaseMessaging.instance
@@ -36,13 +40,19 @@ class FCMNotificationService {
           sound: true,
         );
 
-    // Register current token.
-    final token = await FirebaseMessaging.instance.getToken();
-    if (token != null) {
-      await _repo.registerFCMToken(userId, token);
+    // Register current token — guard against APNS not being ready yet on iOS.
+    // If getToken() throws (e.g. APNS token not set), the onTokenRefresh
+    // listener below will register the token once it becomes available.
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _repo.registerFCMToken(userId, token);
+      }
+    } catch (_) {
+      // APNS token not available yet — will be picked up by onTokenRefresh.
     }
 
-    // Listen for token refreshes.
+    // Listen for token refreshes (fires when APNS token arrives on iOS).
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
       _repo.registerFCMToken(userId, newToken);
     });

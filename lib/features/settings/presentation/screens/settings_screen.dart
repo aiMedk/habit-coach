@@ -19,6 +19,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _settingsRepo = SupabaseSettingsRepository();
   bool _deleting = false;
+  bool _signingOut = false;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +84,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: const Text('Blocked users'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push(AppRoutes.settingsBlocked),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.logout,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(
+                  'Sign out',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                onTap: _signingOut ? null : () => _confirmSignOut(context),
               ),
               const Divider(height: 1),
 
@@ -170,6 +182,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
     if (result != null && mounted) {
       await _settingsRepo.updateReviewDay(userId, result);
+    }
+  }
+
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Sign out?'),
+            content: const Text(
+              'You will need to sign in again to access your habits.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(ctx).colorScheme.error,
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Sign out'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _signingOut = true);
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+      // Router redirect guard will navigate to /login automatically.
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Sign out failed: $e')));
+    } finally {
+      if (mounted) setState(() => _signingOut = false);
     }
   }
 

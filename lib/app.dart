@@ -3,14 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:habit_coach/core/router/app_router.dart';
 import 'package:habit_coach/core/theme/app_theme.dart';
 import 'package:habit_coach/features/auth/presentation/providers/auth_providers.dart';
-import 'package:habit_coach/features/notifications/data/services/fcm_notification_service.dart';
+import 'package:habit_coach/features/habits/presentation/providers/habit_providers.dart';
+// import 'package:habit_coach/features/notifications/data/services/fcm_notification_service.dart';
 
 /// Root app widget. Consumes the GoRouter from Riverpod and applies
 /// the Material 3 theme. Riverpod's ProviderScope is set up in main.dart.
 class HabitCoachApp extends ConsumerStatefulWidget {
-  const HabitCoachApp({super.key, required this.fcmService});
+  const HabitCoachApp({super.key, this.fcmService});
 
-  final FCMNotificationService fcmService;
+  // NOTE: FCMNotificationService is optional until Firebase is implemented
+  final dynamic fcmService;
 
   @override
   ConsumerState<HabitCoachApp> createState() => _HabitCoachAppState();
@@ -22,12 +24,17 @@ class _HabitCoachAppState extends ConsumerState<HabitCoachApp> {
   @override
   void initState() {
     super.initState();
-    // Listen for auth state changes to initialise FCM once user is logged in.
+    // Listen for auth state changes to initialise FCM and offline sync once user is logged in.
     ref.listenManual(currentUserProvider, (_, next) {
       next.whenData((user) {
-        if (user != null && !_fcmInitialised) {
-          _fcmInitialised = true;
-          widget.fcmService.init(user.id);
+        if (user != null) {
+          // T020: Initialise offline completion queue
+          ref.read(offlineQueueProvider);
+          // T127: Initialise FCM (if available)
+          if (!_fcmInitialised && widget.fcmService != null) {
+            _fcmInitialised = true;
+            widget.fcmService.init(user.id);
+          }
         }
       });
     });

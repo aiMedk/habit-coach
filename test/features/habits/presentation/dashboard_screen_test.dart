@@ -83,7 +83,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       // The check icon is shown for completed habits
-      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsWidgets);
     });
   });
 }

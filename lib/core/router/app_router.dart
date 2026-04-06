@@ -39,6 +39,7 @@ abstract final class AppRoutes {
   static const onboardingComplete = '/onboarding/complete';
   static const dashboard = '/dashboard';
   static const habitDetail = '/habit/:id';
+  static const habitNew = '/dashboard/habit/new';
 
   // AI coaching
   static const chat = '/chat/:conversationId';
@@ -53,7 +54,7 @@ abstract final class AppRoutes {
   // Challenges
   static const challenges = '/challenges';
   static const challengeCreate = '/challenges/create';
-  static const challengeDetail = '/challenge/:id';
+  static const challengeDetail = '/challenges/:id';
   static const joinChallenge = '/challenge/join/:token';
 
   // Reviews
@@ -197,6 +198,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 name: 'dashboard',
                 builder: (context, state) => const DashboardScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'habit/new',
+                    name: 'habitNew',
+                    builder:
+                        (context, state) => const HabitCreationScreen(
+                          afterSaveRoute: AppRoutes.dashboard,
+                        ),
+                  ),
                   GoRoute(
                     path: 'habit/:id',
                     name: 'habitDetail',

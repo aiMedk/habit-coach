@@ -40,6 +40,15 @@ class SupabaseChallengeRepository implements ChallengeRepository {
             .select()
             .single();
 
+    final challengeId = row['id'] as String;
+
+    // Auto-enroll the creator as the first participant.
+    await _client.from('challenge_participants').insert({
+      'challenge_id': challengeId,
+      'user_id': creatorId,
+      'status': 'active',
+    });
+
     return _challengeFromRow(row, participantCount: 1);
   }
 

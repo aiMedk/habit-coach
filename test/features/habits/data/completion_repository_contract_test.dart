@@ -113,5 +113,41 @@ void main() {
         expect(pending, isNotEmpty);
       },
     );
+
+    test(
+      'getCompletionsForDateRange returns completions within date range',
+      () async {
+        // T025: Test the new getCompletionsForDateRange method
+        final completions = [
+          _makeCompletion(id: 'c1'),
+          _makeCompletion(id: 'c2'),
+        ];
+        when(
+          () => repo.getCompletionsForDateRange('u1', '2026-03-25', '2026-03-26'),
+        ).thenAnswer((_) async => completions);
+
+        final results = await repo.getCompletionsForDateRange(
+          'u1',
+          '2026-03-25',
+          '2026-03-26',
+        );
+        expect(results, hasLength(2));
+        expect(results.every((c) => !c.isUndone), true);
+      },
+    );
+
+    test(
+      'getCompletionsForDateRange returns empty list for date range with no data',
+      () async {
+        // T025: Empty range test
+        when(
+          () => repo.getCompletionsForDateRange('u1', '2026-05-01', '2026-05-05'),
+        ).thenAnswer((_) async => []);
+
+        final results =
+            await repo.getCompletionsForDateRange('u1', '2026-05-01', '2026-05-05');
+        expect(results, isEmpty);
+      },
+    );
   });
 }

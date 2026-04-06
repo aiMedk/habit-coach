@@ -73,7 +73,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authRepositoryProvider).signInWithGoogle();
     } on AuthFailure catch (e) {
-      setState(() => _errorMessage = e.message);
+      // '_oauth_pending' means the browser opened; session arrives via deep link.
+      if (e.message != '_oauth_pending') {
+        setState(() => _errorMessage = e.message);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -222,8 +225,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 24),
 
                     // Sign-up link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         const Text("Don't have an account?"),
                         TextButton(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:habit_coach/core/router/app_router.dart';
 import 'package:habit_coach/features/auth/presentation/providers/auth_providers.dart';
+import 'package:habit_coach/features/subscription/domain/services/entitlement_service.dart';
 import 'package:habit_coach/features/weekly_review/domain/entities/weekly_review.dart';
 import 'package:habit_coach/features/weekly_review/presentation/providers/review_providers.dart';
 
@@ -13,6 +14,51 @@ class ReviewsListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final entitlementService = ref.watch(entitlementServiceProvider);
+    final isPro = entitlementService.isPro;
+
+    // T019: Show upgrade prompt for free-tier users
+    if (!isPro) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Weekly reviews')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.lock_outline,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Reviews are a Pro feature',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Access your weekly AI reviews and past coaching conversations.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () => context.push(AppRoutes.paywall),
+                  child: const Text('Upgrade to Pro'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(onPressed: () {}, child: const Text('Maybe later')),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final historyAsync = ref.watch(reviewHistoryProvider);
     final generateState = ref.watch(generateReviewProvider);
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:habit_coach/core/router/app_router.dart';
 import 'package:habit_coach/features/challenges/domain/entities/challenge.dart';
 import 'package:habit_coach/features/challenges/presentation/providers/challenge_providers.dart';
+import 'package:habit_coach/features/subscription/domain/services/entitlement_service.dart';
 
 /// T107: ChallengesListScreen — shows user's active/pending/completed challenges
 /// with tabs for filtering. FloatingActionButton opens challenge creation.
@@ -33,6 +34,51 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
 
   @override
   Widget build(BuildContext context) {
+    final entitlementService = ref.watch(entitlementServiceProvider);
+    final isPro = entitlementService.isPro;
+
+    // T018: Show upgrade prompt for free-tier users
+    if (!isPro) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Challenges')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.lock_outline,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Challenges are a Pro feature',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Unlock group challenges and accountability partners.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () => context.push(AppRoutes.paywall),
+                  child: const Text('Upgrade to Pro'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(onPressed: () {}, child: const Text('Maybe later')),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final challengesAsync = ref.watch(userChallengesProvider);
 
     return Scaffold(
@@ -48,6 +94,7 @@ class _ChallengesListScreenState extends ConsumerState<ChallengesListScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: null,
         onPressed: () => context.push(AppRoutes.challengeCreate),
         child: const Icon(Icons.add),
       ),

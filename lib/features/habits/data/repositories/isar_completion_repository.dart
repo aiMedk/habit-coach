@@ -115,6 +115,23 @@ final class IsarCompletionRepository implements CompletionRepository {
   }
 
   @override
+  Future<List<Completion>> getCompletionsForDateRange(
+    String userId,
+    String startDate,
+    String endDate,
+  ) async {
+    final locals =
+        await _isar.completionLocals
+            .filter()
+            .userIdEqualTo(userId)
+            .isUndoneEqualTo(false)
+            .localDateGreaterThan(startDate, include: true)
+            .localDateLessThan(endDate, include: true)
+            .findAll();
+    return locals.map(_toDomain).toList();
+  }
+
+  @override
   Future<List<Completion>> getPendingSyncCompletions(String userId) async {
     final locals =
         await _isar.completionLocals
